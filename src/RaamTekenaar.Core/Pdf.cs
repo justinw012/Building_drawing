@@ -70,10 +70,11 @@ public static class PdfBestand
         PdfDictionary? d = page;
         for (int diepte = 0; d != null && diepte < 32; diepte++)
         {
-            var item = d.Elements.GetValue(sleutel);
+            // Ruwe waarde ophalen: GetValue zet arrays om naar PDFsharp-typen en kan dan falen.
+            var item = d.Elements[sleutel];
             if (item is PdfReference rf) item = rf.Value;
             if (item != null) return item;
-            d = d.Elements.GetValue("/Parent") switch
+            d = d.Elements["/Parent"] switch
             {
                 PdfDictionary pd => pd,
                 PdfReference pr => pr.Value as PdfDictionary,
