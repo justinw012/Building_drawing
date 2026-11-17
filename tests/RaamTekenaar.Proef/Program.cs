@@ -2,8 +2,9 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using RaamTekenaar.Core;
 
-// Gebruik: dotnet run -- <uitvoer.json>
+// Gebruik: dotnet run -- <uitvoer.json> [<project.raamproj> <tekening.pdf>]
 // Schrijft per proefpagina de paginagegevens en de tekenopdrachten weg.
+// Optioneel ook een projectbestand met de ramen van pagina 1 (voor de schermafbeelding).
 string uitvoer = args.Length > 0 ? args[0] : "proef.json";
 
 var raamA = new RaamType
@@ -57,13 +58,16 @@ Plaatsing P(RaamType r, Aanzicht a, double x, double y, int rot = 0, bool spiege
     new() { RaamId = r.Id, Aanzicht = a, X = x, Y = y, Rotatie = rot, Gespiegeld = spiegel, Muurdikte = muur, MmPerPt = s50 };
 
 // 1: A3 liggend, geen rotatie. Gevel met vloerpeil op y=600, plattegrondmuur met buitenkant op y=780.
-Pagina("A3 liggend", new[] { 0, 0, 1190.55, 841.89 }, null, 0,
+var pagina1 = new[]
+{
     P(raamA, Aanzicht.Voor, 150, 600),
     P(raamB, Aanzicht.Voor, 400, 600),
     P(raamA, Aanzicht.Zij, 750, 600),
     P(raamB, Aanzicht.Zij, 900, 600, spiegel: true),
     P(raamA, Aanzicht.Boven, 150, 780, muur: 300),
-    P(raamB, Aanzicht.Boven, 400, 780, muur: 300));
+    P(raamB, Aanzicht.Boven, 400, 780, muur: 300)
+};
+Pagina("A3 liggend", new[] { 0, 0, 1190.55, 841.89 }, null, 0, pagina1);
 
 // 2: A4 staand met /Rotate 90 -> liggend weergegeven
 Pagina("Rotate 90", new[] { 0, 0, 595.28, 841.89 }, null, 90,
@@ -88,3 +92,15 @@ bool gelijk = PdfInhoud.Bouw(project.Plaatsingen, project.Ramen.ToDictionary(r =
            == PdfInhoud.Bouw(terug.Plaatsingen, terug.Ramen.ToDictionary(r => r.Id), info1);
 Console.WriteLine($"Project opslaan/laden geeft dezelfde tekening: {gelijk}");
 Console.WriteLine($"Geschreven: {uitvoer}");
+
+if (args.Length >= 3)
+{
+    var demo = new Project
+    {
+        PdfPad = Path.GetFullPath(args[2]),
+        Ramen = new ObservableCollection<RaamType>(ramen.Values),
+        Plaatsingen = new ObservableCollection<Plaatsing>(pagina1)
+    };
+    ProjectOpslag.Opslaan(demo, args[1]);
+    Console.WriteLine($"Project geschreven: {args[1]}");
+}

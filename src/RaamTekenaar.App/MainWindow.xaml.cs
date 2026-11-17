@@ -71,6 +71,17 @@ public partial class MainWindow : Window
         _klaar = true;
         UpdateReferentieUitleg();
         ZetModus(Modus.Selecteren);
+        Loaded += MainWindow_Loaded;
+    }
+
+    /// <summary>Een .pdf of .raamproj die bij het starten is meegegeven (dubbelklik, slepen op de exe) direct openen.</summary>
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        var args = Environment.GetCommandLineArgs();
+        if (args.Length < 2 || !File.Exists(args[1])) return;
+        string ext = IOPath.GetExtension(args[1]).ToLowerInvariant();
+        if (ext == ".raamproj") await OpenProjectAsync(args[1]);
+        else if (ext == ".pdf" && await LaadPdfAsync(args[1])) _project.PdfPad = args[1];
     }
 
     // =====================================================================
@@ -157,10 +168,15 @@ public partial class MainWindow : Window
         if (!VraagOpslaan()) return;
         var dlg = new OpenFileDialog { Filter = "Raam Tekenaar-project (*.raamproj)|*.raamproj" };
         if (dlg.ShowDialog(this) != true) return;
+        await OpenProjectAsync(dlg.FileName);
+    }
+
+    private async Task OpenProjectAsync(string pad)
+    {
         try
         {
-            var p = ProjectOpslag.Laden(dlg.FileName);
-            ZetProject(p, dlg.FileName);
+            var p = ProjectOpslag.Laden(pad);
+            ZetProject(p, pad);
             _gewijzigd = false;
             if (!string.IsNullOrEmpty(p.PdfPad) && File.Exists(p.PdfPad))
                 await LaadPdfAsync(p.PdfPad);

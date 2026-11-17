@@ -1,0 +1,51 @@
+name: Schermafbeelding
+
+# Handmatig starten: opent het programma op een GitHub-testmachine met een proeftekening
+# en een proefproject, en bewaart een schermafbeelding als artifact.
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Proeftekening en proefproject maken
+        shell: pwsh
+        run: |
+          pip install pikepdf
+          dotnet run --project tests/RaamTekenaar.Proef -c Release -- proef.json demo.raamproj demo.pdf
+          python tests/maak_proef_pdf.py proef.json demo.pdf --zonder-ramen
+
+      - name: Publiceren
+        run: dotnet publish src/RaamTekenaar.App/RaamTekenaar.App.csproj -c Release -r win-x64 -o publish
+
+      - name: Programma starten en schermafbeelding maken
+        shell: powershell
+        run: |
+          try { Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop } catch { Write-Host "Resolutie niet aangepast: $_" }
+          $project = (Resolve-Path demo.raamproj).Path
+          $proc = Start-Process -FilePath (Resolve-Path publish\RaamTekenaar.exe).Path -ArgumentList "`"$project`"" -PassThru
+          Start-Sleep -Seconds 20
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("$PWD\schermafbeelding.png", [System.Drawing.Imaging.ImageFormat]::Png)
+          Write-Host "Scherm: $($b.Width) x $($b.Height); proces actief: $(-not $proc.HasExited)"
+          if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: schermafbeelding
+          path: schermafbeelding.png

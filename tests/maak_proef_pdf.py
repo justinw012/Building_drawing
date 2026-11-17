@@ -1,6 +1,8 @@
 """Maakt proef-PDF's van de uitvoer van RaamTekenaar.Proef en zet de raam-tekenopdrachten erin.
 
-Gebruik: python3 maak_proef_pdf.py proef.json uitvoer.pdf
+Gebruik: python3 maak_proef_pdf.py proef.json uitvoer.pdf [--zonder-ramen]
+
+--zonder-ramen: alleen de proeftekening, zonder de raamopdrachten (om in het programma te openen).
 
 Elke pagina krijgt:
 - een rood kruisje op elk referentiepunt (berekend in weergavecoördinaten -> gebruikersruimte),
@@ -13,7 +15,7 @@ import sys
 import pikepdf
 
 
-def main(invoer: str, uitvoer: str) -> None:
+def main(invoer: str, uitvoer: str, zonder_ramen: bool = False) -> None:
     data = json.load(open(invoer, encoding="utf-8"))
     wand = data["wand"]
     pdf = pikepdf.new()
@@ -51,7 +53,7 @@ def main(invoer: str, uitvoer: str) -> None:
         page = pdf.make_indirect(page)
         voor = pdf.make_stream(b"q\n")
         oud = pdf.make_stream("\n".join(achtergrond).encode() + b"\n")
-        raam = pdf.make_stream(p["inhoud"].encode("ascii"))
+        raam = pdf.make_stream(b"Q\n" if zonder_ramen else p["inhoud"].encode("ascii"))
         page.Contents = pikepdf.Array([voor, oud, raam])
         pdf.pages.append(pikepdf.Page(page))
 
@@ -59,4 +61,4 @@ def main(invoer: str, uitvoer: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], "--zonder-ramen" in sys.argv[3:])
