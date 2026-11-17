@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Proefopstelling voor de rekenkern zonder PDFsharp: maakt de PDF-tekenopdrachten voor
+       een aantal proefpagina's. tests/maak_proef_pdf.py zet die in proef-PDF's. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\RaamTekenaar.Core\Model.cs" Link="Core\Model.cs" />
+    <Compile Include="..\..\src\RaamTekenaar.Core\Geometrie.cs" Link="Core\Geometrie.cs" />
+    <Compile Include="..\..\src\RaamTekenaar.Core\PaginaInfo.cs" Link="Core\PaginaInfo.cs" />
+    <Compile Include="..\..\src\RaamTekenaar.Core\ProjectOpslag.cs" Link="Core\ProjectOpslag.cs" />
+  </ItemGroup>
+
+</Project>

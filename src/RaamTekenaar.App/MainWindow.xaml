@@ -1,0 +1,305 @@
+<Window x:Class="RaamTekenaar.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="clr-namespace:RaamTekenaar.Core;assembly=RaamTekenaar.Core"
+        xmlns:local="clr-namespace:RaamTekenaar"
+        Title="Raam Tekenaar" Height="900" Width="1500" WindowState="Maximized"
+        PreviewKeyDown="Window_PreviewKeyDown" Closing="Window_Closing">
+    <Window.Resources>
+        <local:PlaatsingTekstConverter x:Key="PlaatsingTekst" />
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- ======================= Werkbalk ======================= -->
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button Click="PdfOpenen_Click" ToolTip="Open een PDF-bouwtekening">
+                    <TextBlock Text="📂 PDF openen" />
+                </Button>
+                <Separator />
+                <Button Click="ProjectOpenen_Click" ToolTip="Open een opgeslagen project (raamtypes en plaatsingen)">
+                    <TextBlock Text="Project openen" />
+                </Button>
+                <Button Click="ProjectOpslaan_Click" ToolTip="Sla raamtypes en plaatsingen op (Ctrl+S)">
+                    <TextBlock Text="Project opslaan" />
+                </Button>
+                <Separator />
+                <Button Click="Exporteren_Click" ToolTip="Sla een kopie van de PDF op met de ramen erin getekend">
+                    <TextBlock Text="💾 PDF met ramen opslaan" FontWeight="Bold" />
+                </Button>
+            </ToolBar>
+            <ToolBar>
+                <Button Click="VorigePagina_Click" ToolTip="Vorige pagina">
+                    <TextBlock Text="◀" />
+                </Button>
+                <TextBlock x:Name="PaginaTekst" VerticalAlignment="Center" Margin="6,0" Text="Geen PDF" />
+                <Button Click="VolgendePagina_Click" ToolTip="Volgende pagina">
+                    <TextBlock Text="▶" />
+                </Button>
+                <Separator />
+                <Button Click="ZoomUit_Click" ToolTip="Uitzoomen (scrollwiel)">
+                    <TextBlock Text=" − " FontWeight="Bold" />
+                </Button>
+                <Button Click="ZoomPassend_Click" ToolTip="Hele pagina tonen">
+                    <TextBlock Text="Passend" />
+                </Button>
+                <Button Click="ZoomIn_Click" ToolTip="Inzoomen (scrollwiel)">
+                    <TextBlock Text=" + " FontWeight="Bold" />
+                </Button>
+            </ToolBar>
+            <ToolBar>
+                <TextBlock Text="Schaal 1:" VerticalAlignment="Center" />
+                <TextBox x:Name="SchaalTekst" Width="55" Text="50" LostFocus="Schaal_LostFocus" KeyDown="Schaal_KeyDown"
+                         ToolTip="Schaal van het aanzicht waarin je het volgende raam plaatst" />
+                <Button Click="Kalibreren_Click" ToolTip="Klik twee punten aan waarvan je de werkelijke afstand weet">
+                    <TextBlock Text="📏 Kalibreren" />
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+
+        <!-- ======================= Statusbalk ======================= -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusTekst" />
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock x:Name="PositieTekst" Foreground="#FF555555" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="340" MinWidth="260" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="310" MinWidth="250" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ======================= Links: raamtypes ======================= -->
+            <DockPanel Grid.Column="0" Margin="8,4,4,4">
+                <TextBlock DockPanel.Dock="Top" Text="1. Raamtypes" Style="{StaticResource Kop}" />
+                <ListBox DockPanel.Dock="Top" x:Name="RamenLijst" Height="110" DisplayMemberPath="Naam"
+                         SelectionChanged="RamenLijst_SelectionChanged" />
+                <WrapPanel DockPanel.Dock="Top" Margin="0,2,0,4">
+                    <Button Style="{StaticResource Knop}" Click="RaamNieuw_Click" Content="Nieuw" />
+                    <Button Style="{StaticResource Knop}" Click="RaamKopie_Click" Content="Kopie" />
+                    <Button Style="{StaticResource Knop}" Click="RaamVerwijder_Click" Content="Verwijderen" />
+                </WrapPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="RaamEditor" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                                <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                                <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource Lbl}" Text="Naam / merk" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Naam, UpdateSourceTrigger=PropertyChanged, Delay=300}" />
+
+                            <TextBlock Grid.Row="1" Style="{StaticResource Lbl}" Text="Breedte kozijn (mm)" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Breedte, UpdateSourceTrigger=PropertyChanged, Delay=400}" />
+
+                            <TextBlock Grid.Row="2" Style="{StaticResource Lbl}" Text="Hoogte kozijn (mm)" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Hoogte, UpdateSourceTrigger=PropertyChanged, Delay=400}" />
+
+                            <TextBlock Grid.Row="3" Style="{StaticResource Lbl}" Text="Borstwering (mm)" ToolTip="Vloerpeil tot onderkant kozijn" />
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Borstwering, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                     ToolTip="Vloerpeil tot onderkant kozijn" />
+
+                            <TextBlock Grid.Row="4" Style="{StaticResource Lbl}" Text="Profielbreedte (mm)" ToolTip="Aanzichtbreedte van stijlen en dorpels" />
+                            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ProfielBreedte, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                     ToolTip="Aanzichtbreedte van stijlen en dorpels" />
+
+                            <TextBlock Grid.Row="5" Style="{StaticResource Lbl}" Text="Vleugelbreedte (mm)" ToolTip="Aanzichtbreedte van het raamhout in draaiende delen" />
+                            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding VleugelBreedte, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                     ToolTip="Aanzichtbreedte van het raamhout in draaiende delen" />
+
+                            <TextBlock Grid.Row="6" Style="{StaticResource Lbl}" Text="Kozijndiepte (mm)" />
+                            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Diepte, UpdateSourceTrigger=PropertyChanged, Delay=400}" />
+
+                            <TextBlock Grid.Row="7" Style="{StaticResource Lbl}" Text="Positie in muur (mm)" ToolTip="Afstand van buitenkant gevel tot buitenkant kozijn" />
+                            <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding PositieInMuur, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                     ToolTip="Afstand van buitenkant gevel tot buitenkant kozijn" />
+
+                            <TextBlock Grid.Row="8" Style="{StaticResource Lbl}" Text="Bovenlicht dagmaat (mm)" ToolTip="Hoogte van het bovenlicht; 0 = geen bovenlicht" />
+                            <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding BovenlichtDagmaat, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                     ToolTip="Hoogte van het bovenlicht; 0 = geen bovenlicht" />
+
+                            <TextBlock Grid.Row="9" Style="{StaticResource Lbl}" Text="Bovenlicht type" />
+                            <ComboBox Grid.Row="9" Grid.Column="1" ItemsSource="{x:Static core:Labels.VakTypes}"
+                                      SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding BovenlichtType}" />
+
+                            <CheckBox Grid.Row="10" Grid.Column="1" Content="Bovenlicht naar binnen draaiend"
+                                      IsChecked="{Binding BovenlichtNaarBinnen}" />
+                        </Grid>
+
+                        <TextBlock Text="Vakken (van links naar rechts, gezien van buiten)" Style="{StaticResource Uitleg}" FontWeight="SemiBold" Foreground="Black" />
+                        <DataGrid x:Name="VakkenGrid" ItemsSource="{Binding Vakken}" AutoGenerateColumns="False"
+                                  CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False"
+                                  HeadersVisibility="Column" SelectionMode="Single" MinHeight="60">
+                            <DataGrid.Columns>
+                                <DataGridComboBoxColumn Header="Type" Width="*"
+                                                        ItemsSource="{x:Static core:Labels.VakTypes}"
+                                                        SelectedValuePath="Key" DisplayMemberPath="Value"
+                                                        SelectedValueBinding="{Binding Type, UpdateSourceTrigger=PropertyChanged}" />
+                                <DataGridTextColumn Header="Breedte" Width="62"
+                                                    Binding="{Binding Breedte, UpdateSourceTrigger=LostFocus}" />
+                                <DataGridCheckBoxColumn Header="Binnen" Width="50"
+                                                        Binding="{Binding NaarBinnen, UpdateSourceTrigger=PropertyChanged}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="Breedte = dagmaat in mm, 0 = automatisch verdelen. Binnen = naar binnen draaiend (stippellijn)."
+                                   Style="{StaticResource Uitleg}" FontSize="11" />
+                        <WrapPanel>
+                            <Button Style="{StaticResource Knop}" Click="VakToevoegen_Click" Content="+ Vak" />
+                            <Button Style="{StaticResource Knop}" Click="VakVerwijderen_Click" Content="− Vak" />
+                        </WrapPanel>
+
+                        <TextBlock x:Name="Waarschuwingen" Foreground="DarkRed" TextWrapping="Wrap" Margin="0,4" />
+
+                        <TextBlock Text="Voorbeeld vooraanzicht" Style="{StaticResource Uitleg}" />
+                        <Border BorderBrush="#FFCCCCCC" BorderThickness="1" Background="White" Height="230">
+                            <Canvas x:Name="Voorbeeld" ClipToBounds="True" SizeChanged="Voorbeeld_SizeChanged" />
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#FFDDDDDD" />
+
+            <!-- ======================= Midden: tekening ======================= -->
+            <ScrollViewer x:Name="Scroller" Grid.Column="2" Background="#FF707070"
+                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                          PreviewMouseWheel="Scroller_PreviewMouseWheel"
+                          PreviewMouseDown="Scroller_PreviewMouseDown"
+                          PreviewMouseMove="Scroller_PreviewMouseMove"
+                          PreviewMouseUp="Scroller_PreviewMouseUp">
+                <Grid x:Name="PaginaGrid" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20"
+                      Width="595" Height="842" Visibility="Collapsed">
+                    <Grid.LayoutTransform>
+                        <ScaleTransform x:Name="Zoom" ScaleX="1" ScaleY="1" />
+                    </Grid.LayoutTransform>
+                    <Rectangle Fill="White" />
+                    <Image x:Name="PaginaAfbeelding" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <Canvas x:Name="Overlay" Background="Transparent"
+                            MouseLeftButtonDown="Overlay_MouseLeftButtonDown"
+                            MouseMove="Overlay_MouseMove"
+                            MouseLeftButtonUp="Overlay_MouseLeftButtonUp"
+                            MouseLeave="Overlay_MouseLeave" />
+                    <Canvas x:Name="Hulplaag" IsHitTestVisible="False" />
+                </Grid>
+            </ScrollViewer>
+            <TextBlock x:Name="LeegTekst" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Foreground="White" FontSize="16" IsHitTestVisible="False" TextAlignment="Center"
+                       Text="Open een PDF-bouwtekening om te beginnen&#x0a;(📂 PDF openen)" />
+
+            <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch" Background="#FFDDDDDD" />
+
+            <!-- ======================= Rechts: plaatsen ======================= -->
+            <ScrollViewer Grid.Column="4" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="6,4,10,4">
+                    <TextBlock Text="2. Raam plaatsen" Style="{StaticResource Kop}" />
+                    <TextBlock x:Name="PlaatsRaamNaam" Style="{StaticResource Uitleg}" />
+
+                    <TextBlock Text="Aanzicht" Style="{StaticResource Lbl}" />
+                    <ComboBox x:Name="NieuwAanzicht" ItemsSource="{x:Static core:Labels.Aanzichten}"
+                              SelectedValuePath="Key" DisplayMemberPath="Value" SelectedIndex="0"
+                              SelectionChanged="NieuwAanzicht_SelectionChanged" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition /><RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource Lbl}" Text="Draaien" />
+                        <ComboBox x:Name="NieuwRotatie" Grid.Column="1" ItemsSource="{x:Static core:Labels.Rotaties}"
+                                  ItemStringFormat="{}{0}°" SelectedIndex="0" SelectionChanged="NieuwInstelling_Changed" />
+                        <TextBlock Grid.Row="1" Style="{StaticResource Lbl}" Text="Muurdikte (mm)"
+                                   ToolTip="Alleen bovenaanzicht: dikte van de muur, om de sparing en dagkanten te tekenen. 0 = niet tekenen." />
+                        <TextBox x:Name="NieuwMuurdikte" Grid.Row="1" Grid.Column="1" Text="0" TextChanged="NieuwInstelling_Changed"
+                                 ToolTip="Alleen bovenaanzicht: dikte van de muur, om de sparing en dagkanten te tekenen. 0 = niet tekenen." />
+                    </Grid>
+                    <CheckBox x:Name="NieuwGespiegeld" Content="Spiegelen" Checked="NieuwInstelling_Changed" Unchecked="NieuwInstelling_Changed" />
+                    <CheckBox x:Name="NieuwAfdekken" Content="Onderliggende lijnen wit afdekken" IsChecked="True"
+                              Checked="NieuwInstelling_Changed" Unchecked="NieuwInstelling_Changed" />
+
+                    <Border Background="#FFFFF8E1" BorderBrush="#FFE0C068" BorderThickness="1" Padding="6" Margin="0,4">
+                        <TextBlock x:Name="ReferentieUitleg" TextWrapping="Wrap" />
+                    </Border>
+
+                    <Button x:Name="PlaatsKnop" Click="Plaats_Click" Height="36" Margin="0,4" FontWeight="Bold"
+                            Content="➕ Plaats raam op tekening" />
+                    <TextBlock Text="Houd Shift ingedrukt bij het klikken om meerdere keren te plaatsen. Esc = stoppen."
+                               Style="{StaticResource Uitleg}" FontSize="11" />
+
+                    <TextBlock Text="3. Geplaatste ramen" Style="{StaticResource Kop}" Margin="0,14,0,4" />
+                    <ListBox x:Name="PlaatsingenLijst" Height="150" SelectionChanged="PlaatsingenLijst_SelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource PlaatsingTekst}}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <StackPanel x:Name="PlaatsingEditor" IsEnabled="False" Margin="0,6,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock Style="{StaticResource Lbl}" Text="Raamtype" />
+                            <ComboBox x:Name="PlaatsingRaamKeuze" Grid.Column="1" DisplayMemberPath="Naam"
+                                      SelectedValuePath="Id" SelectedValue="{Binding RaamId}" />
+                            <TextBlock Grid.Row="1" Style="{StaticResource Lbl}" Text="Aanzicht" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{x:Static core:Labels.Aanzichten}"
+                                      SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding Aanzicht}" />
+                            <TextBlock Grid.Row="2" Style="{StaticResource Lbl}" Text="Draaien" />
+                            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{x:Static core:Labels.Rotaties}"
+                                      ItemStringFormat="{}{0}°" SelectedItem="{Binding Rotatie}" />
+                            <TextBlock Grid.Row="3" Style="{StaticResource Lbl}" Text="Muurdikte (mm)" />
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Muurdikte, UpdateSourceTrigger=PropertyChanged, Delay=400}" />
+                            <TextBlock Grid.Row="4" Style="{StaticResource Lbl}" Text="Schaal 1:" />
+                            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding SchaalGetal, UpdateSourceTrigger=PropertyChanged, Delay=600}" />
+                        </Grid>
+                        <CheckBox Content="Spiegelen" IsChecked="{Binding Gespiegeld}" />
+                        <CheckBox Content="Onderliggende lijnen wit afdekken" IsChecked="{Binding Afdekken}" />
+
+                        <TextBlock Text="Verschuiven (werkelijke mm)" Style="{StaticResource Lbl}" Margin="0,8,0,2" />
+                        <Grid HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="36" /><ColumnDefinition Width="36" /><ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="12" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="60" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition /><RowDefinition /><RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Button Grid.Row="0" Grid.Column="1" Content="↑" Tag="U" Click="Verschuif_Click" Margin="1" />
+                            <Button Grid.Row="1" Grid.Column="0" Content="←" Tag="L" Click="Verschuif_Click" Margin="1" />
+                            <Button Grid.Row="1" Grid.Column="2" Content="→" Tag="R" Click="Verschuif_Click" Margin="1" />
+                            <Button Grid.Row="2" Grid.Column="1" Content="↓" Tag="D" Click="Verschuif_Click" Margin="1" />
+                            <TextBlock Grid.Row="1" Grid.Column="4" Text="stap " VerticalAlignment="Center" />
+                            <TextBox x:Name="StapTekst" Grid.Row="1" Grid.Column="5" Text="10" />
+                        </Grid>
+                        <TextBlock Text="Of sleep het raam met de muis, of gebruik de pijltjestoetsen (Shift = 10× de stap)."
+                                   Style="{StaticResource Uitleg}" FontSize="11" />
+                        <Button Style="{StaticResource Knop}" Click="PlaatsingVerwijderen_Click" Content="Verwijderen (Delete)"
+                                HorizontalAlignment="Left" Margin="0,6" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</Window>

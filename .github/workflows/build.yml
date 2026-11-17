@@ -1,0 +1,28 @@
+name: Bouwen
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Proef rekenkern
+        run: dotnet run --project tests/RaamTekenaar.Proef -c Release -- proef.json
+
+      - name: Publiceren als één exe
+        run: dotnet publish src/RaamTekenaar.App/RaamTekenaar.App.csproj -c Release -r win-x64 -o publish
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RaamTekenaar-win-x64
+          path: publish/RaamTekenaar.exe
