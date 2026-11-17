@@ -266,6 +266,7 @@ public partial class MainWindow : Window
             PaginaGrid.Visibility = Visibility.Visible;
             UpdateTitel();
             await ToonPaginaAsync(passend: true);
+            ZetModus(_modus);
             return true;
         }
         catch (Exception ex)

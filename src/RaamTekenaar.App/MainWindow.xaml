@@ -136,7 +136,7 @@
                             <ComboBox Grid.Row="9" Grid.Column="1" ItemsSource="{x:Static core:Labels.VakTypes}"
                                       SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding BovenlichtType}" />
 
-                            <CheckBox Grid.Row="10" Grid.Column="1" Content="Bovenlicht naar binnen draaiend"
+                            <CheckBox Grid.Row="10" Grid.Column="1" Content="Bovenlicht naar binnen"
                                       IsChecked="{Binding BovenlichtNaarBinnen}" />
                         </Grid>
 
