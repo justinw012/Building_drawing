@@ -5,6 +5,9 @@ name: Schermafbeelding
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -49,3 +52,16 @@ jobs:
         with:
           name: schermafbeelding
           path: schermafbeelding.png
+
+      - name: Op branch 'schermafbeelding' zetten
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force uitvoer | Out-Null
+          Copy-Item schermafbeelding.png uitvoer\
+          Set-Location uitvoer
+          git init -q -b schermafbeelding
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add schermafbeelding.png
+          git commit -q -m "Schermafbeelding ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" schermafbeelding
