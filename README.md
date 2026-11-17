@@ -4,7 +4,11 @@ Windows-programma om ramen (kozijnen) in een PDF-bouwtekening te tekenen. Je voe
 
 ## Installeren
 
-Je hoeft niets te installeren. Download `RaamTekenaar.exe` (zie *Bouwen*) en start het programma. Het werkt op Windows 10 en 11.
+Je hoeft niets te installeren. Download de nieuwste versie:
+
+**[RaamTekenaar.exe downloaden](https://github.com/justinw012/building_drawing/releases/latest/download/RaamTekenaar.exe)**
+
+Start daarna het programma. Het werkt op Windows 10 en 11. Krijg je bij de eerste keer starten een blauwe melding van Windows SmartScreen, kies dan **Meer info → Toch uitvoeren**.
 
 ## Werkwijze
 
